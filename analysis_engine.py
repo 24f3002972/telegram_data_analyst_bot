@@ -18,12 +18,17 @@ from ai import ask_llm
 def solve(chat_id, question):
 
     template = extract_json_template(question)
-
+    print("TEMPLATE =", template)
     log_event("received_message", question)
 
     add_message(chat_id, question)
 
-    history = "\n".join(get_history(chat_id))
+    messages = get_history(chat_id)
+
+    if len(messages) > 3:
+        history = "\n".join(messages[-3:])
+    else:
+        history = "\n".join(messages)
 
     urls = extract_urls(question)
 
@@ -44,18 +49,25 @@ def solve(chat_id, question):
                         "columns": list(df.columns),
                     },
             )
+            planning_question = question
+
+            if template:
+                planning_question = planning_question.replace(
+                    json.dumps(template),
+                    ""
+                )
+
             plan = get_analysis_plan(
-                question,
+                planning_question,
                 list(df.columns)
             )
-
             log_event("analysis_plan", plan)
 
             analysis_result = execute_plan(
                 df,
                 plan
-             )
-
+            )
+            print("ANALYSIS RESULT =", analysis_result)
             log_event(
                 "analysis_result",
                 str(analysis_result)
@@ -77,7 +89,27 @@ def solve(chat_id, question):
 
             dataset_text = f"Dataset could not be loaded: {e}"
 
-    prompt = f"""
+    if analysis_result is not None:
+
+        prompt = f"""
+You are a JSON formatter.
+
+The data analysis has already been completed.
+
+DO NOT perform any calculations.
+DO NOT guess.
+DO NOT use previous conversation.
+
+Current Question:
+{question}
+
+Computed Analysis Result:
+{analysis_result}
+"""
+
+    else:
+
+        prompt = f"""
 You are a professional data analyst.
 
 Question:
@@ -93,15 +125,15 @@ Dataset:
 
 Return ONLY ONE valid JSON object.
 
-It MUST match this structure exactly:
+Use this exact JSON structure:
 
 {json.dumps(template, indent=2)}
 
-Never wrap the JSON in markdown.
-
-Return one JSON object only.
+Do NOT change the structure.
+Do NOT add explanations.
+Do NOT use markdown.
 """
-
+ 
     else:
 
         prompt += """
@@ -110,7 +142,40 @@ Return ONLY the requested answer.
 """
 
     log_event("sending_to_llm", prompt[:3000])
+    if analysis_result is not None and template:
 
+    # analysis_result may be a list or a dict
+        if isinstance(analysis_result, list):
+            first = analysis_result[0]
+        elif isinstance(analysis_result, dict):
+            first = analysis_result
+        else:
+            first = {"value": analysis_result}
+
+        result = {
+            "answer": {},
+            "log_url": "PLACEHOLDER"
+        }
+
+    # Fill answer according to template keys
+        print("FIRST =", first)
+        for key in template["answer"]:
+
+            matched = False
+
+            for col in first:
+
+                if key.lower() == col.lower():
+
+                    result["answer"][key] = first[col]
+                    matched = True
+                    break
+
+        # If no matching column, use generic value
+            if not matched and "value" in first:
+                result["answer"][key] = first["value"]
+
+        return json.dumps(result, separators=(",", ":"))
     raw_answer = ask_llm(prompt)
 
     log_event("llm_answer", raw_answer)
