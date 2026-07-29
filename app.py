@@ -23,11 +23,10 @@ def run_bot():
     telegram_app.run_polling()
 
 
-threading.Thread(
-    target=run_bot,
-    daemon=True,
-).start()
-
 if __name__ == "__main__":
+    threading.Thread(
+        target=run_bot,
+        daemon=True,
+    ).start()
+
     app.run(host="0.0.0.0", port=5000)
-    
