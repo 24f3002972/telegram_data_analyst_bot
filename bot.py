@@ -26,9 +26,9 @@ async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(answer)
 
 
-app = Application.builder().token(BOT_TOKEN).build()
+telegram_app = Application.builder().token(BOT_TOKEN).build()
 
-app.add_handler(
+telegram_app.add_handler(
     MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         reply,
@@ -39,4 +39,4 @@ print("Bot initialized.")
 
 if __name__ == "__main__":
     print("Bot is running...")
-    app.run_polling()
+    telegram_app.run_polling()
