@@ -196,56 +196,37 @@ Return ONLY the requested answer.
         else:
             first = {"value": analysis_result}
 
-        result = {
-            "answer": {},
-            "log_url": LOG_URL
-        }
+   # Support both:
+# {"answer": {...}, "log_url": "..."}
+# and
+# {"state": "..."}
 
-    # Fill answer according to template keys
+        if "answer" in template:
+            result = {
+                "answer": {},
+            "log_url": LOG_URL,
+            }
+            output = result["answer"]
+            template_keys = template["answer"].keys()
+        else:
+            result = {}
+            output = result
+            template_keys = template.keys()
+
         print("FIRST =", first)
-        for key in template["answer"]:
+
+        for key in template_keys:
 
             matched = False
 
             for col in first:
 
                 if key.lower() == col.lower():
-
-                    result["answer"][key] = first[col]
+                    output[key] = first[col]
                     matched = True
                     break
 
-        # If no matching column, use generic value
-            if not matched and "value" in first:
-                result["answer"][key] = first["value"]
+        if not matched and "value" in first:
+            output[key] = first["value"]
 
-        return json.dumps(result, separators=(",", ":"))
-    raw_answer = ask_llm(prompt)
-
-    log_event("llm_answer", raw_answer)
-
-    result = extract_json_response(raw_answer)
-    if result is not None:
-        result["log_url"] = LOG_URL
-    if result is None:
-
-        result = {
-            "answer": raw_answer,
-            "log_url": LOG_URL,
-        }
-
-    if "answer" not in result:
-
-        result = {
-            "answer": result,
-            "log_url": LOG_URL,
-        }
-
-    if "log_url" not in result:
-
-        result["log_url"] = LOG_URL
-
-    return json.dumps(
-        result,
-        separators=(",", ":"),
-    )
+    return json.dumps(result, separators=(",", ":"))
