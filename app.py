@@ -24,9 +24,10 @@ def run_log():
 
     return send_file(LOG_FILE, mimetype="application/json")
 
-
 def start_bot():
-    telegram_app.run_polling()
+    telegram_app.run_polling(
+        stop_signals=None
+    )
 
 
 if __name__ == "__main__":
