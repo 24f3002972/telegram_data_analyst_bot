@@ -196,37 +196,65 @@ Return ONLY the requested answer.
         else:
             first = {"value": analysis_result}
 
-   # Support both:
-# {"answer": {...}, "log_url": "..."}
-# and
-# {"state": "..."}
+        # Support both:
+# 1. {"answer": {...}, "log_url": "..."}
+# 2. {"state": "..."} (official grader)
 
         if "answer" in template:
             result = {
-                "answer": {},
+            "answer": {},
             "log_url": LOG_URL,
-            }
-            output = result["answer"]
-            template_keys = template["answer"].keys()
-        else:
-            result = {}
-            output = result
-            template_keys = template.keys()
+        }
+        output = result["answer"]
+        template_keys = template["answer"].keys()
+    else:
+        result = {}
+        output = result
+        template_keys = template.keys()
 
-        print("FIRST =", first)
+    print("FIRST =", first)
 
-        for key in template_keys:
+    for key in template_keys:
+ 
+        matched = False
 
-            matched = False
+        for col in first:
 
-            for col in first:
-
-                if key.lower() == col.lower():
-                    output[key] = first[col]
-                    matched = True
-                    break
+            if key.lower() == col.lower():
+                output[key] = first[col]
+                matched = True
+                break
 
         if not matched and "value" in first:
             output[key] = first["value"]
 
     return json.dumps(result, separators=(",", ":"))
+    raw_answer = ask_llm(prompt)
+
+    log_event("llm_answer", raw_answer)
+
+    result = extract_json_response(raw_answer)
+
+# Assignment format
+    if template and "answer" in template:
+
+        if result is None:
+            result = {
+                "answer": raw_answer,
+                "log_url": LOG_URL,
+            }
+
+        if "answer" not in result:
+            result = {
+                "answer": result,
+                "log_url": LOG_URL,
+            }
+
+        result["log_url"] = LOG_URL
+        return json.dumps(result, separators=(",", ":"))
+
+# Official grader / plain JSON template
+    if result is not None:
+        return json.dumps(result, separators=(",", ":"))
+
+    return raw_answer
