@@ -96,7 +96,7 @@ def solve(chat_id, question):
             dataset_text = f"Dataset could not be loaded: {e}"
     if search_results:
 
-        for item in search_results[:3]:
+        for item in search_results[:1]:
   
             search_text += f"""
 Title:
@@ -142,6 +142,7 @@ Priority:
 
 If Public Search Results are provided,
 use ONLY those results.
+Do not use prior knowledge or memory.
 
 Prefer these sources:
 
