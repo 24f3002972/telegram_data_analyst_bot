@@ -225,7 +225,8 @@ Return ONLY the requested answer.
     log_event("llm_answer", raw_answer)
 
     result = extract_json_response(raw_answer)
-
+    if result is not None:
+        result["log_url"] = LOG_URL
     if result is None:
 
         result = {
