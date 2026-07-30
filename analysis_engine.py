@@ -14,7 +14,7 @@ from data_loader import (
     load_dataset,
 )
 from ai import ask_llm
-LOG_URL = "https://telegramdataanalystbot-production-78b7.up.railway.app/run.jsonl"
+LOG_URL = "https://telegramdataanalystbot-production-bf44.up.railway.app/run.jsonl"
 
 def solve(chat_id, question):
 
