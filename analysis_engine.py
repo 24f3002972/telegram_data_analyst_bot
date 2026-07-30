@@ -14,7 +14,7 @@ from data_loader import (
     load_dataset,
 )
 from ai import ask_llm
-
+LOG_URL = "https://telegramdataanalystbot-production-78b7.up.railway.app/run.jsonl"
 
 def solve(chat_id, question):
 
@@ -197,7 +197,7 @@ Return ONLY the requested answer.
 
         result = {
             "answer": {},
-            "log_url": "PLACEHOLDER"
+            "log_url": LOG_URL
         }
 
     # Fill answer according to template keys
@@ -229,19 +229,19 @@ Return ONLY the requested answer.
 
         result = {
             "answer": raw_answer,
-            "log_url": "PLACEHOLDER",
+            "log_url": LOG_URL,
         }
 
     if "answer" not in result:
 
         result = {
             "answer": result,
-            "log_url": "PLACEHOLDER",
+            "log_url": LOG_URL,
         }
 
     if "log_url" not in result:
 
-        result["log_url"] = "PLACEHOLDER"
+        result["log_url"] = LOG_URL
 
     return json.dumps(
         result,
