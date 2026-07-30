@@ -22,7 +22,8 @@ async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     question = update.message.text
 
     answer = solve(chat_id, question)
-
+    print("QUESTION:", question)
+    print("ANSWER:", answer)
     await update.message.reply_text(answer)
 
 

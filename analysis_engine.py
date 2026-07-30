@@ -14,7 +14,7 @@ from data_loader import (
     load_dataset,
 )
 from ai import ask_llm
-LOG_URL = "https://telegramdataanalystbot-production-bf44.up.railway.app/run.jsonl"
+LOG_URL = "https://telegramdataanalystbot-production-78b7.up.railway.app/run.jsonl"
 
 def solve(chat_id, question):
 
@@ -186,9 +186,9 @@ Return ONLY the requested answer.
 """
 
     log_event("sending_to_llm", prompt[:3000])
+
     if analysis_result is not None and template:
 
-    # analysis_result may be a list or a dict
         if isinstance(analysis_result, list):
             first = analysis_result[0]
         elif isinstance(analysis_result, dict):
@@ -196,64 +196,46 @@ Return ONLY the requested answer.
         else:
             first = {"value": analysis_result}
 
-        # Support both:
-# 1. {"answer": {...}, "log_url": "..."}
-# 2. {"state": "..."} (official grader)
-
-        if "answer" in template:
+        if isinstance(template, dict) and "answer" in template:
             result = {
-            "answer": {},
-            "log_url": LOG_URL,
-        }
-        output = result["answer"]
-        template_keys = template["answer"].keys()
-    else:
-        result = {}
-        output = result
-        template_keys = template.keys()
+                "answer": {},
+                "log_url": LOG_URL,
+            }
+            output = result["answer"]
+            template_keys = template["answer"].keys()
+        else:
+            result = {}
+            output = result
+            template_keys = template.keys()
 
-    print("FIRST =", first)
+        print("FIRST =", first)
 
-    for key in template_keys:
- 
-        matched = False
+        for key in template_keys:
+            matched = False
+            for col in first:
+                if key.lower() == col.lower():
+                    output[key] = first[col]
+                    matched = True
+                    break
+            if not matched and "value" in first:
+                output[key] = first["value"]
 
-        for col in first:
+        return json.dumps(result, separators=(",", ":"))
 
-            if key.lower() == col.lower():
-                output[key] = first[col]
-                matched = True
-                break
-
-        if not matched and "value" in first:
-            output[key] = first["value"]
-
-    return json.dumps(result, separators=(",", ":"))
     raw_answer = ask_llm(prompt)
-
     log_event("llm_answer", raw_answer)
 
     result = extract_json_response(raw_answer)
 
-# Assignment format
-    if template and "answer" in template:
-
+    if template and isinstance(template, dict) and "answer" in template:
         if result is None:
-            result = {
-                "answer": raw_answer,
-                "log_url": LOG_URL,
-            }
-
-        if "answer" not in result:
-            result = {
-                "answer": result,
-                "log_url": LOG_URL,
-            }
+            result = {"answer": raw_answer, "log_url": LOG_URL}
+        elif "answer" not in result:
+            result = {"answer": result, "log_url": LOG_URL}
 
         result["log_url"] = LOG_URL
         return json.dumps(result, separators=(",", ":"))
 
-# Official grader / plain JSON template
     if result is not None:
         return json.dumps(result, separators=(",", ":"))
 
