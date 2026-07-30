@@ -4,6 +4,7 @@ from memory import add_message, get_history
 from logger import log_event
 from intent_parser import get_analysis_plan
 from operations import execute_plan
+from search import search_public_data
 from json_utils import (
     extract_json_template,
     extract_json_response,
@@ -36,7 +37,12 @@ def solve(chat_id, question):
 
     dataset_text = ""
     analysis_result = None
+    search_results = None
+    search_text = ""
 
+    if not urls:
+        search_results = search_public_data(question)
+        log_event("search_results", search_results)
     if urls:
 
         try:
@@ -88,7 +94,21 @@ def solve(chat_id, question):
             log_event("dataset_error", str(e))
 
             dataset_text = f"Dataset could not be loaded: {e}"
+    if search_results:
 
+        for item in search_results[:3]:
+  
+            search_text += f"""
+Title:
+{item['title']}
+
+URL:
+{item['url']}
+
+Content:
+{item['content']}
+
+"""
     if analysis_result is not None:
 
         prompt = f"""
@@ -112,11 +132,34 @@ Computed Analysis Result:
         prompt = f"""
 You are a professional data analyst.
 
+Answer the user's question using the information below.
+
+Priority:
+
+1. Analysis Result
+2. Dataset
+3. Public Search Results
+
+If Public Search Results are provided,
+use ONLY those results.
+
+Prefer these sources:
+
+1. mospi.gov.in
+2. data.gov.in
+3. pib.gov.in
+
+Do NOT guess.
+Do NOT invent values.
+
 Question:
 {history}
 
 Dataset:
 {dataset_text}
+
+Public Search Results:
+{search_text}
 """
 
     if template:
